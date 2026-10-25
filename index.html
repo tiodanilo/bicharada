@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Bicharada: jogo infantil para aprender o nome dos animais, com fases, voz em português e jogo das sombras.">
+<meta name="theme-color" content="#D9EFF8">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0} img{max-width:100%} [hidden]{display:none!important}
+</style>
+<title>Bicharada</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@700;900&display=swap">
+<style>
+/* Layout: one-screen picture-book game — toolbar on top, title row, centered even grids of chunky pressable cards; one bright light look for small kids */
+:root{
+  color-scheme: light;
+  --bg:#D9EFF8; --bg2:#C4E5F3; --paper:#FFFFFF; --ink:#22314A; --ink-soft:#5B6B85;
+  --sun:#FFC23A; --good:#24A866; --bad:#E5484D;
+  --mam:#F0812F; --ave:#E2A400; --mar:#2A84D2; --ins:#38A047; --rep:#8C5BC4; --som:#3B3F58;
+  --f-display:"Baloo 2","Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:22px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;
+  background-image:radial-gradient(circle at 12% 8%,#fff8 0 60px,transparent 61px),radial-gradient(circle at 88% 14%,#fff7 0 44px,transparent 45px);
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;text-transform:uppercase}
+.app{max-width:960px;margin:0 auto;padding-block:14px 32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;min-height:100%}
+.tela{display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.05;text-wrap:balance}
+button,input{font:inherit;color:inherit;border:0;background:none;text-transform:inherit}
+button{cursor:pointer}
+button:focus-visible,.peca:focus-visible,.alvo:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+
+/* chunky button */
+.chunk{background:var(--paper);border-radius:var(--r);box-shadow:0 6px 0 var(--edge,#9fc3d4);transition:transform .08s, box-shadow .08s}
+.chunk:active{transform:translateY(4px);box-shadow:0 2px 0 var(--edge,#9fc3d4)}
+
+/* toolbar */
+.barra{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.barra .grupo{display:flex;gap:10px}
+.icon-btn{width:56px;height:56px;flex:none;display:grid;place-items:center;font-size:28px;border-radius:18px}
+.icon-btn svg{width:28px;height:28px;stroke:var(--ink);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.voltar{display:flex;align-items:center;gap:8px;height:56px;padding:0 18px 0 12px;font-family:var(--f-display);font-size:20px;border-radius:18px}
+.voltar span:first-child{font-size:26px}
+.titulo{text-align:center;font-size:clamp(30px,6vw,44px)}
+.sub{margin:0;text-align:center;font-weight:900;color:var(--ink-soft);font-size:17px;letter-spacing:.5px}
+
+/* entrada */
+.marca{text-align:center;font-size:clamp(48px,12vw,84px);letter-spacing:1px;margin-top:10px}
+.marca span:nth-child(odd){color:var(--mam)} .marca span:nth-child(3n){color:var(--mar)} .marca span:nth-child(4n){color:var(--ins)}
+.desfile{display:flex;justify-content:center;gap:clamp(6px,2vw,16px);font-size:clamp(38px,9vw,60px);flex-wrap:wrap}
+.desfile span{animation:balanca 2.4s ease-in-out infinite}
+.desfile span:nth-child(2n){animation-delay:.4s}.desfile span:nth-child(3n){animation-delay:.8s}
+.cartao-nome{background:var(--paper);border-radius:28px;padding:20px clamp(12px,3vw,22px);width:100%;max-width:580px;margin:0 auto;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 0 #9fc3d4}
+.cartao-nome label{font-family:var(--f-display);font-size:clamp(26px,6vw,34px);text-align:center}
+.visor{width:100%;min-height:68px;padding:10px 16px;border-radius:18px;background:var(--bg);border:4px solid var(--mar);font-family:var(--f-display);font-size:clamp(28px,7vw,40px);text-align:center;letter-spacing:3px;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:pre}
+.visor .vazio{color:#9fb3c6}
+.visor .cursor{display:inline-block;width:4px;height:1em;background:var(--ink);margin-left:3px;animation:pisca 1s steps(1) infinite}
+@keyframes pisca{50%{opacity:0}}
+.teclado{display:grid;grid-template-columns:repeat(9,1fr);gap:clamp(5px,1.4vw,10px)}
+.tecla{--edge:color-mix(in srgb,var(--cl,#5B6B85) 72%,#000);background:var(--cl,#5B6B85);color:#fff;height:clamp(44px,10.5vw,64px);border-radius:clamp(10px,2vw,14px);font-family:var(--f-display);font-size:clamp(20px,5.2vw,30px);font-weight:800;display:grid;place-items:center;padding:0;text-shadow:0 2px 0 #0002}
+.tecla.espaco{--cl:#5D7286;grid-column:span 6;font-size:clamp(16px,4vw,20px);letter-spacing:1px}
+.tecla.apagar{--cl:#DC5050;grid-column:span 3;font-size:clamp(16px,4vw,20px);display:flex;gap:8px;justify-content:center;align-items:center}
+.tecla.apagar svg{width:24px;height:24px;stroke:#fff;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (max-width:420px){.tecla.apagar .txt{display:none}}
+.visor .l{display:inline-block;animation:pula .3s}
+.tecla.aperta{transform:translateY(4px);box-shadow:0 2px 0 var(--edge)}
+.btn{--edge:#17794a;background:var(--good);color:#fff;padding:14px;font-family:var(--f-display);font-size:26px;width:100%}
+.btn.claro{--edge:#9fc3d4;background:var(--bg);color:var(--ink)}
+
+/* home */
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.cat{--edge:color-mix(in srgb,var(--cor) 70%,#000);background:var(--cor);color:#fff;padding:18px 10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.cat .emo{font-size:clamp(52px,10vw,68px);line-height:1.1;filter:drop-shadow(0 4px 0 #0002)}
+.cat h3{font-size:clamp(19px,3.4vw,24px)}
+.cat .estrelas{font-weight:900;font-size:16px}
+.cat.sombra .sil{display:flex;gap:2px;font-size:clamp(34px,6.5vw,46px);line-height:1.5}
+.cat.sombra .sil span{filter:brightness(0) invert(1) opacity(.92)}
+.estrelas{letter-spacing:2px;min-height:22px}
+.estrelas .off{opacity:.35;filter:grayscale(1)}
+
+/* category */
+.fases{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.fase{--edge:color-mix(in srgb,var(--cor) 70%,#000);background:var(--cor);color:#fff;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.fase b{font-family:var(--f-display);font-size:26px;line-height:1}
+.fase small{font-weight:900;font-size:14px;opacity:.95;letter-spacing:1px}
+.fase .estrelas{font-size:18px}
+.secao{font-family:var(--f-display);font-size:22px;color:var(--ink-soft);text-align:center;margin-top:6px}
+.grade{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.bicho{padding:12px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bicho .emo{font-size:clamp(46px,9vw,60px);line-height:1.15}
+.nome{font-family:var(--f-display);font-weight:800;font-size:clamp(15px,3vw,19px);letter-spacing:1px;color:var(--ink)}
+
+/* quiz */
+.pontos{display:flex;gap:10px;justify-content:center}
+.pontos i{width:18px;height:18px;border-radius:50%;background:var(--paper);box-shadow:inset 0 0 0 3px var(--bg2)}
+.pontos i.feito{background:var(--sun);box-shadow:none}
+.pontos i.agora{box-shadow:inset 0 0 0 3px var(--ink)}
+.pergunta{background:var(--paper);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:14px;justify-content:center;text-align:center;width:100%;max-width:640px;margin:0 auto}
+.pergunta h2{font-size:clamp(26px,6vw,40px);flex:1;min-width:0}
+.pergunta h2 em{font-style:normal;color:var(--cor);letter-spacing:1px}
+.falar{--edge:color-mix(in srgb,var(--cor) 70%,#000);background:var(--cor);color:#fff}
+.opcoes{display:grid;gap:16px;grid-template-columns:repeat(var(--cols,3),1fr);width:100%;max-width:var(--maxw,640px);margin:0 auto}
+.opcao{aspect-ratio:1/1;max-width:100%;display:grid;place-items:center;font-size:clamp(52px,12vw,96px)}
+.opcao.errou{animation:sacode .4s;opacity:.35;pointer-events:none}
+.opcao.certo{background:var(--good);--edge:#17794a;animation:pula .5s}
+.selo{min-height:34px;text-align:center;font-family:var(--f-display);font-size:26px;color:var(--good)}
+
+/* sombras */
+.palco{width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.alvos,.bandeja{display:grid;gap:14px;grid-template-columns:repeat(var(--n,3),1fr)}
+.alvo{aspect-ratio:1/1;max-width:100%;border-radius:var(--r);background:var(--bg2);border:4px dashed #8fbfd3;display:grid;place-items:center;font-size:clamp(48px,11vw,90px);transition:background .2s,border-color .2s,transform .15s}
+.alvo .emo{filter:brightness(0) opacity(.78);transition:filter .3s}
+.alvo.perto{border-color:var(--ink);transform:scale(1.04)}
+.alvo.ok{background:var(--paper);border:4px solid var(--good);animation:pula .5s}
+.alvo.ok .emo{filter:none}
+.alvo.errou{animation:sacode .4s}
+.bandeja{background:#ffffff80;border-radius:var(--r);padding:14px}
+.peca{aspect-ratio:1/1;max-width:100%;display:grid;place-items:center;font-size:clamp(44px,10vw,80px);touch-action:none;cursor:grab}
+.peca.escolhida{outline:5px solid var(--sun);outline-offset:2px;transform:translateY(-4px)}
+.peca.levantada{opacity:.3}
+.peca.usada{visibility:hidden}
+.fantasma{position:fixed;left:0;top:0;z-index:50;pointer-events:none;font-size:clamp(60px,13vw,100px);line-height:1;transform:translate(-50%,-50%) scale(1.1);filter:drop-shadow(0 10px 8px #0004)}
+
+/* fim */
+.fim{position:fixed;inset:0;background:#22314Acc;display:grid;place-items:center;z-index:40;text-transform:uppercase;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.fim-box{background:var(--paper);border-radius:28px;padding:26px 22px;max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;gap:14px;animation:pula .5s}
+.fim-box .grande{font-size:76px;line-height:1}
+.fim-box h2{font-size:36px}
+.fim-box .estrelas{font-size:44px}
+.fim-botoes{display:flex;flex-direction:column;gap:14px}
+
+.confete{position:fixed;z-index:60;pointer-events:none;font-size:30px;animation:cai 1.4s ease-in forwards}
+@keyframes cai{to{transform:translateY(70vh) rotate(260deg);opacity:0}}
+@keyframes pula{0%{transform:scale(.8)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes sacode{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+@keyframes balanca{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+.bicho.toca .emo{animation:pula .45s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:620px){
+  .cats{grid-template-columns:repeat(2,1fr);gap:14px}
+  .grade{grid-template-columns:repeat(3,1fr);gap:12px}
+  .fases{gap:10px} .fase b{font-size:21px} .fase small{font-size:12px}
+  .opcoes{gap:12px} .alvos,.bandeja{gap:10px}
+  .voltar .txt{display:none} .voltar{padding:0;width:56px;justify-content:center}
+  .barra .grupo{gap:8px}
+}
+@media (max-width:360px){.icon-btn,.voltar{width:50px;height:50px}}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <!-- ENTRADA -->
+  <section id="tela-entrada" class="tela">
+    <div class="barra"><span></span><div class="grupo" data-ferramentas="semhome"></div></div>
+    <h1 class="marca"><span>B</span><span>I</span><span>C</span><span>H</span><span>A</span><span>R</span><span>A</span><span>D</span><span>A</span></h1>
+    <div class="desfile" aria-hidden="true"><span>🦁</span><span>🦜</span><span>🐬</span><span>🦋</span><span>🐸</span><span>🐘</span></div>
+    <form class="cartao-nome" id="form-nome" autocomplete="off">
+      <label id="rotulo-nome">QUAL É O SEU NOME?</label>
+      <div class="visor" id="visor" role="textbox" aria-labelledby="rotulo-nome" aria-readonly="true"></div>
+      <div class="teclado" id="teclado"></div>
+      <button type="submit" class="btn chunk">VAMOS JOGAR ➜</button>
+    </form>
+  </section>
+
+  <!-- INÍCIO -->
+  <section id="tela-inicio" class="tela" hidden>
+    <div class="barra">
+      <button class="voltar chunk" data-ir="entrada" aria-label="Novo jogador"><span>👤</span><span class="txt">NOVO JOGADOR</span></button>
+      <div class="grupo" data-ferramentas="semhome"></div>
+    </div>
+    <h2 class="titulo" id="ola"></h2>
+    <p class="sub">ESCOLHA UM GRUPO DE BICHOS</p>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <!-- CATEGORIA -->
+  <section id="tela-cat" class="tela" hidden>
+    <div class="barra">
+      <button class="voltar chunk" data-ir="inicio" aria-label="Voltar"><span>⬅️</span><span class="txt">VOLTAR</span></button>
+      <div class="grupo" data-ferramentas></div>
+    </div>
+    <h2 class="titulo" id="cat-titulo"></h2>
+    <div class="fases" id="fases"></div>
+    <h3 class="secao">TOQUE NO BICHO PARA OUVIR O NOME</h3>
+    <div class="grade" id="grade"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="tela-quiz" class="tela" hidden>
+    <div class="barra">
+      <button class="voltar chunk" data-ir="cat" aria-label="Voltar"><span>⬅️</span><span class="txt">VOLTAR</span></button>
+      <div class="grupo" data-ferramentas></div>
+    </div>
+    <div class="pontos" id="pontos"></div>
+    <div class="pergunta">
+      <h2 id="pergunta"></h2>
+      <button class="icon-btn chunk falar" id="repetir" aria-label="Ouvir de novo">🗣️</button>
+    </div>
+    <div class="opcoes" id="opcoes"></div>
+    <div class="selo" id="selo"></div>
+  </section>
+
+  <!-- SOMBRAS -->
+  <section id="tela-sombras" class="tela" hidden>
+    <div class="barra">
+      <button class="voltar chunk" data-ir="inicio" aria-label="Voltar"><span>⬅️</span><span class="txt">VOLTAR</span></button>
+      <div class="grupo" data-ferramentas></div>
+    </div>
+    <h2 class="titulo">JOGO DAS SOMBRAS</h2>
+    <div class="pontos" id="pontos-s"></div>
+    <p class="sub">ARRASTE CADA BICHO ATÉ A SUA SOMBRA</p>
+    <div class="palco">
+      <div class="alvos" id="alvos"></div>
+      <div class="bandeja" id="bandeja"></div>
+    </div>
+  </section>
+</div>
+
+<div class="fim" id="fim" hidden>
+  <div class="fim-box">
+    <div class="grande" id="fim-emo">🎉</div>
+    <h2 id="fim-titulo">PARABÉNS!</h2>
+    <div class="estrelas" id="fim-estrelas"></div>
+    <div class="fim-botoes" id="fim-botoes"></div>
+  </div>
+</div>
+
+<script>
+const CATS=[
+ {id:'mam',nome:'Mamíferos',cor:'var(--mam)',icone:'🦁',bichos:[
+  ['🐕','cachorro','o'],['🐈','gato','o'],['🐘','elefante','o'],['🦁','leão','o'],['🐒','macaco','o'],['🦒','girafa','a'],
+  ['🐄','vaca','a'],['🐎','cavalo','o'],['🐇','coelho','o'],['🐻','urso','o'],['🦓','zebra','a'],['🐖','porco','o']]},
+ {id:'ave',nome:'Aves',cor:'var(--ave)',icone:'🦜',bichos:[
+  ['🦜','papagaio','o'],['🦉','coruja','a'],['🐧','pinguim','o'],['🦆','pato','o'],['🐓','galo','o'],['🦅','águia','a'],
+  ['🦩','flamingo','o'],['🦚','pavão','o'],['🕊️','pomba','a'],['🐤','pintinho','o']]},
+ {id:'mar',nome:'Marinhos',cor:'var(--mar)',icone:'🐳',bichos:[
+  ['🐋','baleia','a'],['🐬','golfinho','o'],['🦈','tubarão','o'],['🐙','polvo','o'],['🦀','caranguejo','o'],['🐠','peixe','o'],
+  ['🦭','foca','a'],['🦑','lula','a'],['🐡','baiacu','o'],['🦞','lagosta','a']]},
+ {id:'ins',nome:'Insetos',cor:'var(--ins)',icone:'🐞',bichos:[
+  ['🐝','abelha','a'],['🦋','borboleta','a'],['🐞','joaninha','a'],['🐜','formiga','a'],['🦗','grilo','o'],['🪲','besouro','o'],
+  ['🦟','mosquito','o'],['🪰','mosca','a'],['🐛','lagarta','a']]},
+ {id:'rep',nome:'Répteis',cor:'var(--rep)',icone:'🐊',bichos:[
+  ['🐊','jacaré','o'],['🐍','cobra','a'],['🦎','lagarto','o'],['🐸','sapo','o'],['🐢','tartaruga','a']]}
+];
+const FASES=[{n:3,rot:'FÁCIL'},{n:4,rot:'MÉDIO'},{n:6,rot:'DIFÍCIL'}];
+const POR_FASE=5, RODADAS_SOMBRA=5;
+const $=s=>document.querySelector(s);
+const embaralha=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const art=b=>b[2]==='a'?'a':'o';
+
+/* ---------- progresso e nome ---------- */
+let prog={};
+try{prog=JSON.parse(localStorage.getItem('bicharada')||'{}')||{}}catch(e){prog={}}
+const salvar=()=>{try{localStorage.setItem('bicharada',JSON.stringify(prog))}catch(e){}};
+const estrelasHTML=(n,max=3)=>Array.from({length:max},(_,i)=>`<span class="${i<n?'':'off'}">⭐</span>`).join('');
+let nome='';try{nome=localStorage.getItem('bicharada-nome')||''}catch(e){}
+const comNome=t=>nome?`${t}, ${nome}`:t;
+
+/* ---------- som e voz ---------- */
+let somLigado=true; try{somLigado=localStorage.getItem('bicharada-som')!=='0'}catch(e){}
+let vozes=[]; const carregaVozes=()=>{try{vozes=speechSynthesis.getVoices()}catch(e){}};
+carregaVozes(); try{speechSynthesis.onvoiceschanged=carregaVozes}catch(e){}
+function falar(t){
+  if(!somLigado) return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.rate=.88;u.pitch=1.15;
+    const v=vozes.find(v=>v.lang==='pt-BR')||vozes.find(v=>v.lang&&v.lang.startsWith('pt'));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}
+}
+let ac=null;
+function tom(notas){
+  if(!somLigado) return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();let t=ac.currentTime;
+    notas.forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d);t+=d*.8})}catch(e){}
+}
+const somCerto=()=>tom([[660,.12],[880,.18]]), somErro=()=>tom([[220,.2]]), somVitoria=()=>tom([[523,.14],[659,.14],[784,.14],[1047,.3]]);
+
+/* ---------- barra de ferramentas: início, tela cheia, som ---------- */
+const ICON_CHEIA='<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const ICON_SAIR='<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+const podeCheia=!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+const emCheia=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+document.querySelectorAll('[data-ferramentas]').forEach(g=>{
+  if(g.dataset.ferramentas!=='semhome') g.insertAdjacentHTML('beforeend','<button class="icon-btn chunk btn-home" aria-label="Início">🏠</button>');
+  if(podeCheia) g.insertAdjacentHTML('beforeend','<button class="icon-btn chunk btn-cheia" aria-label="Tela cheia"></button>');
+  g.insertAdjacentHTML('beforeend','<button class="icon-btn chunk btn-som" aria-label="Som"></button>');
+});
+function atualizaBarra(){
+  document.querySelectorAll('.btn-som').forEach(b=>b.textContent=somLigado?'🔊':'🔇');
+  document.querySelectorAll('.btn-cheia').forEach(b=>{b.innerHTML=emCheia()?ICON_SAIR:ICON_CHEIA;b.setAttribute('aria-label',emCheia()?'Sair da tela cheia':'Tela cheia')});
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.classList.contains('btn-som')){somLigado=!somLigado;try{localStorage.setItem('bicharada-som',somLigado?'1':'0')}catch(_){}
+    if(!somLigado)try{speechSynthesis.cancel()}catch(_){} atualizaBarra();}
+  else if(b.classList.contains('btn-home')){abreInicio()}
+  else if(b.classList.contains('btn-cheia')){
+    try{
+      if(emCheia()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+      else{const el=document.documentElement;const p=(el.requestFullscreen||el.webkitRequestFullscreen).call(el);if(p&&p.catch)p.catch(()=>{})}
+    }catch(_){}
+  }
+  else if(b.dataset.ir){const d=b.dataset.ir;if(d==='cat')abreCat(catAtual);else if(d==='entrada')abreEntrada();else abreInicio()}
+});
+document.addEventListener('fullscreenchange',atualizaBarra);document.addEventListener('webkitfullscreenchange',atualizaBarra);
+atualizaBarra();
+
+/* ---------- telas ---------- */
+let catAtual=null;
+function mostra(id){document.querySelectorAll('.tela').forEach(t=>t.hidden=t.id!=='tela-'+id);$('#fim').hidden=true;window.scrollTo(0,0)}
+
+/* ---------- teclado de letras ---------- */
+const LETRAS='ABCDEFGHIJKLMNOPQRSTUVWXYZÇ'.split('');
+const FALA_LETRA={A:'á',B:'bê',C:'cê',D:'dê',E:'é',F:'éfe',G:'gê',H:'agá',I:'i',J:'jota',K:'cá',L:'éle',M:'ême',N:'êne',O:'ó',P:'pê',Q:'quê',R:'érre',S:'ésse',T:'tê',U:'u',V:'vê',W:'dáblio',X:'xis',Y:'ípsilon',Z:'zê','Ç':'cê cedilha'};
+/* 10 cores em sequência num teclado de 9 colunas: as cores vão se deslocando a cada linha */
+const CORES_LETRA=['#E5484D','#F2711C','#E2A400','#46A758','#12A594','#0090FF','#3E63DD','#8E4EC6','#D6409F','#A0612A'];
+const corLetra=l=>CORES_LETRA[LETRAS.indexOf(l)%CORES_LETRA.length];
+const MAX_NOME=16;
+let digitado='';
+function mostraVisor(){
+  $('#visor').innerHTML=digitado?`<span>${[...digitado].map(c=>c===' '?' ':`<span class="l" style="color:${corLetra(c)}">${c}</span>`).join('')}</span><span class="cursor"></span>`:`<span class="vazio">SEU NOME</span><span class="cursor"></span>`;
+}
+function teclar(k){
+  if(k==='apagar'){digitado=digitado.slice(0,-1);falar('apagar')}
+  else if(k===' '){if(digitado&&!digitado.endsWith(' ')&&digitado.length<MAX_NOME){digitado+=' ';tom([[440,.08]])}}
+  else if(digitado.length<MAX_NOME){digitado+=k;falar(FALA_LETRA[k]||k)}
+  else somErro();
+  mostraVisor();
+}
+(function montaTeclado(){
+  const t=$('#teclado');
+  LETRAS.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='tecla chunk';b.textContent=l;b.dataset.k=l;b.style.setProperty('--cl',corLetra(l));t.appendChild(b)});
+  t.insertAdjacentHTML('beforeend','<button type="button" class="tecla chunk espaco" data-k=" ">ESPAÇO</button><button type="button" class="tecla chunk apagar" data-k="apagar" aria-label="Apagar"><svg viewBox="0 0 24 24"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M17 9l-6 6M11 9l6 6"/></svg><span class="txt">APAGAR</span></button>');
+  t.addEventListener('click',e=>{const b=e.target.closest('.tecla');if(b)teclar(b.dataset.k)});
+})();
+document.addEventListener('keydown',e=>{
+  if($('#tela-entrada').hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toUpperCase();
+  let alvo=null;
+  if(e.key==='Backspace'){alvo='apagar'}else if(e.key===' '){alvo=' '}else if(LETRAS.includes(k)){alvo=k}
+  else if(e.key==='Enter'&&!e.target.closest('button')){e.preventDefault();$('#form-nome').requestSubmit();return}
+  if(alvo===null)return;
+  if(alvo===' '&&e.target.closest('button'))return;
+  e.preventDefault();teclar(alvo);
+  const b=document.querySelector(`.tecla[data-k="${alvo}"]`);if(b){b.classList.add('aperta');setTimeout(()=>b.classList.remove('aperta'),120)}
+});
+
+function abreEntrada(){digitado='';mostraVisor();mostra('entrada')}
+$('#form-nome').addEventListener('submit',e=>{
+  e.preventDefault();nome=digitado.trim().toUpperCase();
+  prog={};salvar(); /* novo jogador: estrelas zeradas */
+  try{localStorage.setItem('bicharada-nome',nome)}catch(_){}
+  falar(nome?`Olá, ${nome}! Vamos aprender os nomes dos bichos!`:'Vamos aprender os nomes dos bichos!');
+  abreInicio();
+});
+
+function abreInicio(){
+  $('#ola').textContent=nome?`OLÁ, ${nome}!`:'OLÁ!';
+  const el=$('#cats');el.innerHTML='';
+  CATS.forEach(c=>{
+    const est=(prog[c.id]||[0,0,0]).reduce((a,b)=>a+b,0);
+    const b=document.createElement('button');b.className='cat chunk';b.style.setProperty('--cor',c.cor);
+    b.innerHTML=`<span class="emo">${c.icone}</span><h3>${c.nome}</h3><span class="estrelas">⭐ ${est}/9</span>`;
+    b.onclick=()=>{falar(c.nome);abreCat(c)};el.appendChild(b);
+  });
+  const s=document.createElement('button');s.className='cat chunk sombra';s.style.setProperty('--cor','var(--som)');
+  s.innerHTML=`<span class="sil"><span>🐘</span><span>🦒</span><span>🐢</span></span><h3>Sombras</h3><span class="estrelas">⭐ ${prog.sombras||0}/3</span>`;
+  s.onclick=()=>{falar('Jogo das sombras');iniciaSombras()};el.appendChild(s);
+  mostra('inicio');
+}
+
+function abreCat(c){
+  catAtual=c;$('#cat-titulo').textContent=c.nome;$('#tela-cat').style.setProperty('--cor',c.cor);
+  const f=$('#fases');f.innerHTML='';
+  FASES.forEach((fa,i)=>{
+    const b=document.createElement('button');b.className='fase chunk';b.style.setProperty('--cor',c.cor);
+    b.innerHTML=`<b>FASE ${i+1}</b><small>${fa.rot}</small><span class="estrelas">${estrelasHTML((prog[c.id]||[])[i]||0)}</span>`;
+    b.onclick=()=>iniciaQuiz(c,i);f.appendChild(b);
+  });
+  const g=$('#grade');g.innerHTML='';
+  c.bichos.forEach(b=>{
+    const bt=document.createElement('button');bt.className='bicho chunk';
+    bt.innerHTML=`<span class="emo">${b[0]}</span><span class="nome">${b[1]}</span>`;
+    bt.onclick=()=>{falar(`${art(b)} ${b[1]}`);bt.classList.remove('toca');void bt.offsetWidth;bt.classList.add('toca')};
+    g.appendChild(bt);
+  });
+  mostra('cat');
+}
+
+/* ---------- quiz ---------- */
+let Q=null;
+function iniciaQuiz(c,fase){
+  Q={c,fase,alvos:embaralha(c.bichos).slice(0,POR_FASE),i:0,erros:0,travado:false};
+  $('#tela-quiz').style.setProperty('--cor',c.cor);
+  mostra('quiz');proxima();
+}
+function pontos(el,total,feito){el.innerHTML=Array.from({length:total},(_,i)=>`<i class="${i<feito?'feito':i===feito?'agora':''}"></i>`).join('')}
+const frase=b=>`Onde está ${art(b)} ${b[1]}?`;
+function proxima(){
+  if(Q.i>=Q.alvos.length) return fimQuiz();
+  Q.travado=false;$('#selo').textContent='';
+  const alvo=Q.alvos[Q.i];pontos($('#pontos'),POR_FASE,Q.i);
+  const n=Math.min(FASES[Q.fase].n,Q.c.bichos.length);
+  const opts=embaralha([alvo,...embaralha(Q.c.bichos.filter(b=>b!==alvo)).slice(0,n-1)]);
+  $('#pergunta').innerHTML=`ONDE ESTÁ ${art(alvo)} <em>${alvo[1]}</em>?`;
+  const o=$('#opcoes');o.innerHTML='';
+  const cols=n===4?2:3;o.style.setProperty('--cols',cols);o.style.setProperty('--maxw',n===4?'440px':n===6?'560px':'640px');
+  opts.forEach(b=>{
+    const bt=document.createElement('button');bt.className='opcao chunk';bt.textContent=b[0];bt.setAttribute('aria-label',b[1]);
+    bt.onclick=()=>responde(bt,b,alvo);o.appendChild(bt);
+  });
+  setTimeout(()=>falar(frase(alvo)),250);
+}
+$('#repetir').onclick=()=>Q&&falar(frase(Q.alvos[Q.i]));
+function responde(bt,b,alvo){
+  if(Q.travado) return;
+  if(b===alvo){
+    Q.travado=true;bt.classList.add('certo');somCerto();
+    const elogios=['Muito bem','Isso mesmo','Parabéns','Você acertou','Uau'];
+    const el=comNome(elogios[Math.random()*elogios.length|0]);
+    $('#selo').textContent=`${el}! ${b[1]}!`;
+    falar(`${el}! É ${art(b)} ${b[1]}!`);
+    Q.i++;setTimeout(proxima,1900);
+  }else{
+    Q.erros++;bt.classList.add('errou');somErro();
+    falar(`Esse é ${art(b)} ${b[1]}. Tente de novo!`);
+  }
+}
+function fimQuiz(){
+  pontos($('#pontos'),POR_FASE,POR_FASE);
+  const est=Q.erros===0?3:Q.erros<=2?2:1;
+  const arr=prog[Q.c.id]||[0,0,0];arr[Q.fase]=Math.max(arr[Q.fase]||0,est);prog[Q.c.id]=arr;salvar();
+  const botoes=[];
+  if(Q.fase<FASES.length-1) botoes.push(['PRÓXIMA FASE ➜','',()=>iniciaQuiz(Q.c,Q.fase+1)]);
+  botoes.push(['JOGAR DE NOVO','claro',()=>iniciaQuiz(Q.c,Q.fase)]);
+  botoes.push(['🏠 INÍCIO','claro',abreInicio]);
+  mostraFim(est,botoes);
+}
+function mostraFim(est,botoes){
+  const base=est===3?'Perfeito':est===2?'Muito bem':'Bom trabalho';
+  $('#fim-titulo').textContent=comNome(base)+'!';
+  $('#fim-emo').textContent=est===3?'🏆':'🎉';
+  $('#fim-estrelas').innerHTML=estrelasHTML(est);
+  const fb=$('#fim-botoes');fb.innerHTML='';
+  botoes.forEach(([t,cl,fn])=>{const b=document.createElement('button');b.className='btn chunk '+cl;b.textContent=t;b.onclick=fn;fb.appendChild(b)});
+  $('#fim').hidden=false;somVitoria();falar(comNome(base)+'! Você ganhou '+est+(est===1?' estrela!':' estrelas!'));confete();
+}
+function confete(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for(let i=0;i<22;i++){const s=document.createElement('span');s.className='confete';s.textContent=['⭐','🎈','✨','🌟'][i%4];
+    s.style.left=Math.random()*100+'vw';s.style.top=(-10+Math.random()*20)+'vh';s.style.animationDelay=Math.random()*.4+'s';
+    document.body.appendChild(s);setTimeout(()=>s.remove(),2000)}
+}
+
+/* ---------- sombras ---------- */
+const TODOS=CATS.flatMap(c=>c.bichos);
+let S=null,selecionada=null;
+function iniciaSombras(){S={r:0,erros:0,usados:new Set()};mostra('sombras');rodadaSombra();setTimeout(()=>falar('De quem é essa sombra? Arraste cada bicho até a sua sombra.'),300)}
+function rodadaSombra(){
+  if(S.r>=RODADAS_SOMBRA) return fimSombras();
+  pontos($('#pontos-s'),RODADAS_SOMBRA,S.r);selecionada=null;
+  const n=S.r<2?3:4;
+  let pool=TODOS.filter(b=>!S.usados.has(b[1]));if(pool.length<n){S.usados.clear();pool=TODOS}
+  const grupo=embaralha(pool).slice(0,n);grupo.forEach(b=>S.usados.add(b[1]));S.falta=n;
+  const al=$('#alvos'),ba=$('#bandeja');al.innerHTML='';ba.innerHTML='';
+  al.style.setProperty('--n',n);ba.style.setProperty('--n',n);
+  embaralha(grupo).forEach(b=>{
+    const d=document.createElement('button');d.className='alvo';d.dataset.id=b[1];d.setAttribute('aria-label','Sombra');
+    d.innerHTML=`<span class="emo">${b[0]}</span>`;
+    d.onclick=()=>{if(selecionada) tenta(selecionada,d)};al.appendChild(d);
+  });
+  embaralha(grupo).forEach(b=>{
+    const p=document.createElement('div');p.className='peca chunk';p.tabIndex=0;p.textContent=b[0];p.dataset.id=b[1];p.dataset.art=b[2];
+    p.setAttribute('role','button');p.setAttribute('aria-label',b[1]);
+    ligaArraste(p);p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();seleciona(p)}});
+    ba.appendChild(p);
+  });
+}
+function seleciona(p){
+  document.querySelectorAll('.peca.escolhida').forEach(x=>x.classList.remove('escolhida'));
+  if(selecionada===p){selecionada=null;return}
+  selecionada=p;p.classList.add('escolhida');falar((p.dataset.art==='a'?'A ':'O ')+p.dataset.id);
+}
+function ligaArraste(p){
+  let ar=null;
+  p.addEventListener('pointerdown',e=>{
+    if(p.classList.contains('usada'))return;e.preventDefault();
+    ar={x0:e.clientX,y0:e.clientY,g:null};try{p.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  p.addEventListener('pointermove',e=>{
+    if(!ar)return;
+    if(!ar.g&&Math.hypot(e.clientX-ar.x0,e.clientY-ar.y0)>8){
+      ar.g=document.createElement('div');ar.g.className='fantasma';ar.g.textContent=p.textContent;document.body.appendChild(ar.g);
+      p.classList.add('levantada');document.querySelectorAll('.peca.escolhida').forEach(x=>x.classList.remove('escolhida'));selecionada=null;
+    }
+    if(ar.g){ar.g.style.left=e.clientX+'px';ar.g.style.top=e.clientY+'px';
+      const sob=document.elementFromPoint(e.clientX,e.clientY)?.closest('.alvo');
+      document.querySelectorAll('.alvo.perto').forEach(a=>{if(a!==sob)a.classList.remove('perto')});
+      if(sob&&!sob.classList.contains('ok'))sob.classList.add('perto');}
+  });
+  const solta=e=>{
+    if(!ar)return;const a=ar;ar=null;
+    if(a.g){a.g.remove();p.classList.remove('levantada');document.querySelectorAll('.alvo.perto').forEach(x=>x.classList.remove('perto'));
+      const alvo=e.type==='pointerup'?document.elementFromPoint(e.clientX,e.clientY)?.closest('.alvo'):null;
+      if(alvo)tenta(p,alvo);
+    }else if(e.type==='pointerup') seleciona(p);
+  };
+  p.addEventListener('pointerup',solta);p.addEventListener('pointercancel',solta);
+}
+function tenta(p,alvo){
+  if(alvo.classList.contains('ok'))return;
+  if(alvo.dataset.id===p.dataset.id){
+    alvo.classList.add('ok');alvo.setAttribute('aria-label',p.dataset.id);p.classList.add('usada');p.classList.remove('escolhida');selecionada=null;
+    somCerto();falar(`Isso! É ${p.dataset.art} ${p.dataset.id}!`);
+    if(--S.falta===0){S.r++;setTimeout(rodadaSombra,1700)}
+  }else{
+    S.erros++;somErro();alvo.classList.remove('errou');void alvo.offsetWidth;alvo.classList.add('errou');
+    falar('Não é essa. Tente outra sombra!');
+  }
+}
+function fimSombras(){
+  pontos($('#pontos-s'),RODADAS_SOMBRA,RODADAS_SOMBRA);
+  const est=S.erros<=1?3:S.erros<=4?2:1;prog.sombras=Math.max(prog.sombras||0,est);salvar();
+  mostraFim(est,[['JOGAR DE NOVO','',iniciaSombras],['🏠 INÍCIO','claro',abreInicio]]);
+}
+
+abreEntrada();
+</script>
+
+</body>
+</html>

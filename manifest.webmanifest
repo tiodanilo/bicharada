@@ -1,0 +1,12 @@
+{
+  "name": "Bicharada",
+  "short_name": "Bicharada",
+  "description": "Jogo infantil para aprender o nome dos animais.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#D9EFF8",
+  "theme_color": "#D9EFF8",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+}
